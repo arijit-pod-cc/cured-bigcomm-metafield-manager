@@ -33,7 +33,7 @@
     "**/*.mts",
     "**/*.ts",
     "**/*.tsx"
-  ],
+, "app/api/health/route.js"  ],
   "exclude": [
     "node_modules"
   ]
