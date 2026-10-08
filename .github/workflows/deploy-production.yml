@@ -1,0 +1,121 @@
+name: Deploy production
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: next-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    # Manual runs must also target main.
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+
+    env:
+      SSH_HOST: ${{ secrets.SSH_HOST }}
+      SSH_PORT: ${{ secrets.SSH_PORT }}
+      SSH_USER: ${{ secrets.SSH_USER }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          package-manager-cache: false
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Configure build environment
+        env:
+          BUILD_ENV_FILE: ${{ secrets.BUILD_ENV_FILE }}
+        run: |
+          set -euo pipefail
+          umask 077
+          printf '%s\n' "$BUILD_ENV_FILE" > .env.production
+
+      # Add your project's lint/typecheck/test commands here.
+
+      - name: Build Next.js
+        run: npm run build
+
+      - name: Package standalone application
+        run: |
+          set -euo pipefail
+
+          mkdir -p deployment
+          cp -a .next/standalone/. deployment/
+
+          mkdir -p deployment/.next
+          cp -a .next/static deployment/.next/static
+
+          if [ -d public ]; then
+            cp -a public deployment/public
+          fi
+
+          find deployment -type f -name '.env*' -delete
+
+          test -f deployment/server.js
+          tar -czf production.tar.gz -C deployment .
+
+      - name: Configure SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+
+          install -m 700 -d "$HOME/.ssh"
+
+          printf '%s\n' "$SSH_PRIVATE_KEY" > "$HOME/.ssh/id_ed25519"
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+
+          chmod 600 "$HOME/.ssh/id_ed25519"
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+      - name: Upload release
+        run: |
+          set -euo pipefail
+
+          release_id="${GITHUB_SHA}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+
+          scp \
+            -o BatchMode=yes \
+            -o StrictHostKeyChecking=yes \
+            -o ConnectTimeout=20 \
+            -P "$SSH_PORT" \
+            production.tar.gz \
+            "$SSH_USER@$SSH_HOST:/var/www/html/vhost/releases/$release_id.tar.gz"
+
+      - name: Activate release and check health
+        run: |
+          set -euo pipefail
+
+          release_id="${GITHUB_SHA}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+
+          ssh \
+            -o BatchMode=yes \
+            -o StrictHostKeyChecking=yes \
+            -o ConnectTimeout=20 \
+            -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            "bash /home/web-admin/deploy-next.sh '$release_id'"
+
+      - name: Clean up runner credentials
+        if: always()
+        run: |
+          rm -f "$HOME/.ssh/id_ed25519"
+          rm -f .env.production
