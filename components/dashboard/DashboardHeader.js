@@ -10,7 +10,7 @@ export default function DashboardHeader() {
       </h2>
 
       <p className="mt-2 text-sm text-slate-500">
-        Manage your BigCommerce metadata from here.
+        Manage, organize, and monitor all your BigCommerce custom meta fields and objects in one place.
       </p>
     </div>
   );
