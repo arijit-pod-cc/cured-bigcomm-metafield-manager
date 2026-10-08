@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: "standalone",
   allowedDevOrigins: [
     'query-baton-alarm.ngrok-free.dev',
     '*.ngrok-free.dev',
