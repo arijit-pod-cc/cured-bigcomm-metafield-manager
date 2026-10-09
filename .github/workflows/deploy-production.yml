@@ -63,7 +63,8 @@ jobs:
           cp -a .next/static deployment/.next/static
 
           if [ -d public ]; then
-            cp -a public deployment/public
+            mkdir -p deployment/public
+            cp -a public/. deployment/public/
           fi
 
           find deployment -type f -name '.env*' -delete
