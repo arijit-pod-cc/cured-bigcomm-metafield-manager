@@ -225,13 +225,14 @@ export async function saveProductMetafieldsBundle(
           INSERT INTO metafield_values
           (
             storeHash,
+            definitionId,
             category,
             category_data_id,
             valueJson
           )
-          VALUES (?, ?, ?, ?)
+          VALUES (?, ?, ?, ?, ?)
         `,
-        [storeHash, category, String(categoryDataId), valueJson]
+        [storeHash, 0, category, String(categoryDataId), valueJson]
       );
       savedId = result.insertId;
     }
