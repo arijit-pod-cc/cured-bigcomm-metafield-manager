@@ -189,6 +189,126 @@ export async function fetchPagesItems(context, options = {}) {
     };
 }
 
+export async function fetchBlogsItems(context, options = {}) {
+    const { page = 1, limit = 50, search = '' } = options;
+    const session = decodePayload(context);
+    const storeHash = session?.context;
+    const user = session?.user;
+
+    if (!storeHash || !user?.id) {
+        return {
+            items: [],
+            pagination: normalizePagination({}, page, limit),
+        };
+    }
+
+    const db = (await import('@/lib/db')).default;
+    const hasUser = await db.hasStoreUser(storeHash, String(user.id));
+
+    if (!hasUser) {
+        return {
+            items: [],
+            pagination: normalizePagination({}, page, limit),
+        };
+    }
+
+    const accessToken = await db.getStoreToken(storeHash);
+
+    if (!accessToken) {
+        return {
+            items: [],
+            pagination: normalizePagination({}, page, limit),
+        };
+    }
+
+    const headers = {
+        'X-Auth-Token': accessToken,
+        Accept: 'application/json',
+    };
+
+    if (search.trim()) {
+        const queryTerm = search.trim().toLowerCase();
+        const res = await fetch(
+            `https://api.bigcommerce.com/stores/${storeHash}/v2/blog/posts?page=1&limit=250`,
+            { headers }
+        );
+        const allPosts = res.ok ? await res.json() : [];
+        const filtered = (Array.isArray(allPosts) ? allPosts : []).filter(
+            (post) =>
+                (post.title && post.title.toLowerCase().includes(queryTerm)) ||
+                (post.url && post.url.toLowerCase().includes(queryTerm)) ||
+                (Array.isArray(post.tags) &&
+                    post.tags.some((t) => String(t).toLowerCase().includes(queryTerm)))
+        );
+
+        const total = filtered.length;
+        const totalPages = Math.max(1, Math.ceil(total / limit));
+        const start = (page - 1) * limit;
+        const paginatedPosts = filtered.slice(start, start + limit);
+
+        const items = paginatedPosts.map((post) => ({
+            id: post.id,
+            name: post.title,
+            sku: post.url || String(post.id),
+            image: post.thumbnail_path
+                ? post.thumbnail_path.startsWith('http')
+                    ? post.thumbnail_path
+                    : `https://store-${storeHash}.mybigcommerce.com${post.thumbnail_path}`
+                : null,
+            url: post.url,
+            is_published: post.is_published,
+        }));
+
+        return {
+            items,
+            pagination: {
+                total,
+                count: items.length,
+                perPage: limit,
+                currentPage: page,
+                totalPages,
+            },
+        };
+    }
+
+    const countRes = await fetch(
+        `https://api.bigcommerce.com/stores/${storeHash}/v2/blog/posts/count`,
+        { headers }
+    );
+    const countData = countRes.ok ? await countRes.json() : { count: 0 };
+    const total = Number(countData?.count || 0);
+
+    const postsRes = await fetch(
+        `https://api.bigcommerce.com/stores/${storeHash}/v2/blog/posts?page=${page}&limit=${limit}`,
+        { headers }
+    );
+    const postsData = postsRes.ok ? await postsRes.json() : [];
+
+    const items = (Array.isArray(postsData) ? postsData : []).map((post) => ({
+        id: post.id,
+        name: post.title,
+        sku: post.url || String(post.id),
+        image: post.thumbnail_path
+            ? post.thumbnail_path.startsWith('http')
+                ? post.thumbnail_path
+                : `https://store-${storeHash}.mybigcommerce.com${post.thumbnail_path}`
+            : null,
+        url: post.url,
+        is_published: post.is_published,
+    }));
+
+    return {
+        items,
+        pagination: {
+            total,
+            count: items.length,
+            perPage: limit,
+            currentPage: page,
+            totalPages: Math.max(1, Math.ceil(total / limit)),
+        },
+    };
+}
+
 export async function fetchCategoryItems(category, context, options = {}) {
     const normalizedCategory = String(category || '').toLowerCase();
 
@@ -206,6 +326,10 @@ export async function fetchCategoryItems(category, context, options = {}) {
 
     if (normalizedCategory === 'pages') {
         return fetchPagesItems(context, options);
+    }
+
+    if (normalizedCategory === 'blogs') {
+        return fetchBlogsItems(context, options);
     }
 
     return {

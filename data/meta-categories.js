@@ -9,6 +9,7 @@ import {
   MapPin,
   Globe,
   Store,
+  BookOpen,
 } from "lucide-react";
 
 export const categories = [
@@ -71,5 +72,11 @@ export const categories = [
     count: 0,
     icon: FileText,
     href: "/meta-categories/pages",
+  },
+  {
+    name: "Blogs",
+    count: 129,
+    icon: BookOpen,
+    href: "/meta-categories/blogs",
   },
 ];

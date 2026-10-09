@@ -492,10 +492,10 @@ export default function MetafieldsPage({ params }) {
 
       {/* Metafield API Endpoint & Response Modal */}
       {snippetMetafield && (() => {
-        const fullKey = `${snippetMetafield.namespace}.${snippetMetafield.key || snippetMetafield.namespace}`;
-        const sampleId = category === "products" ? "117" : "21";
+        const sampleId = category === "products" ? "117" : (category === "blogs" ? "1" : "21");
+        const idVar = category === "products" ? "productId" : (category === "blogs" ? "blogId" : "pageId");
         const endpointPath = `/api/metafield-value/${category}/${sampleId}`;
-        const fetchCode = `// Fetch ${snippetMetafield.name} (${category})\nconst res = await fetch('/api/metafield-value/${category}/' + ${category === "products" ? "productId" : "pageId"});\nconst data = await res.json();\n\n// Access the metafield value\nconst ${snippetMetafield.key || "value"} = data.metafield["${fullKey}"];\nconsole.log(${snippetMetafield.key || "value"});`;
+        const fetchCode = `// Fetch ${snippetMetafield.name} (${category})\nconst res = await fetch('/api/metafield-value/${category}/' + ${idVar});\nconst data = await res.json();\n\n// Access the metafield value\nconst ${snippetMetafield.key || "value"} = data.metafield["${fullKey}"];\nconsole.log(${snippetMetafield.key || "value"});`;
         
         const sampleResponse = JSON.stringify(
           {

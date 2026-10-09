@@ -3,7 +3,7 @@ import ProductMetaEdit from "@/components/meta-categories/ProductMetaEdit";
 export default async function CategoryItemPage({ params }) {
   const { category, id } = await params;
 
-  if (category === "products" || category === "pages") {
+  if (category === "products" || category === "pages" || category === "blogs") {
     return (
       <ProductMetaEdit
         category={category}

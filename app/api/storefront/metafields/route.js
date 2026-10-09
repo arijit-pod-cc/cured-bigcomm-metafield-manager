@@ -10,12 +10,13 @@ export async function GET(request) {
       searchParams.get("itemId") ||
       searchParams.get("pageId") ||
       searchParams.get("productId") ||
+      searchParams.get("blogId") ||
       searchParams.get("id") ||
       "";
 
     if (!itemId) {
       return NextResponse.json(
-        { error: "itemId, pageId, or productId parameter is required" },
+        { error: "itemId, productId, pageId, or blogId parameter is required" },
         { status: 400, headers: { "Access-Control-Allow-Origin": "*" } }
       );
     }
@@ -64,6 +65,7 @@ export async function GET(request) {
         itemId,
         productId: category === "products" ? itemId : undefined,
         pageId: category === "pages" ? itemId : undefined,
+        blogId: category === "blogs" ? itemId : undefined,
         category,
         metafields: bundle,
       },

@@ -54,20 +54,19 @@ export async function deleteMetafield(id, category, context) {
     const key = def.key || def.namespace;
     const namespace = def.namespace || "custom";
 
-    // Clean up values from MySQL product bundles and BigCommerce Stencil storefront
-    if (category === "products") {
-      try {
-        const productValues = await db.query(
-          `
-            SELECT id, category_data_id, valueJson
-            FROM metafield_values
-            WHERE storeHash = ?
-              AND category = 'products'
-          `,
-          [storeHash]
-        );
+    // Clean up values from MySQL bundles
+    try {
+      const categoryValues = await db.query(
+        `
+          SELECT id, category_data_id, valueJson
+          FROM metafield_values
+          WHERE storeHash = ?
+            AND category = ?
+        `,
+        [storeHash, category]
+      );
 
-        for (const row of productValues || []) {
+      for (const row of categoryValues || []) {
           if (!row.valueJson) continue;
           let bundle = {};
           try {
@@ -101,7 +100,6 @@ export async function deleteMetafield(id, category, context) {
       } catch (cleanErr) {
         console.warn("Cleanup warning during metafield deletion:", cleanErr?.message);
       }
-    }
 
     // Delete definition
     await db.query(

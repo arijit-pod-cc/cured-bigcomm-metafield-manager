@@ -213,6 +213,7 @@ export default function ProductMetaEdit({ category, productId }) {
     const categoryMap = {
       products: "Product",
       pages: "Page",
+      blogs: "Blog",
       orders: "Order",
       customers: "Customer",
       variants: "Variant",

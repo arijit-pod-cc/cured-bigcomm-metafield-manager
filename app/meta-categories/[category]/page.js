@@ -2,6 +2,7 @@ import ProductCategoryItems from "@/components/meta-categories/ProductCategoryIt
 import OrderCategoryItems from "@/components/meta-categories/OrderCategoryItems";
 import VariantCategoryItems from "@/components/meta-categories/VariantCategoryItems";
 import PagesCategoryItems from "@/components/meta-categories/PagesCategoryItems";
+import BlogsCategoryItems from "@/components/meta-categories/BlogsCategoryItems";
 import GenericCategoryItems from "@/components/meta-categories/GenericCategoryItems";
 
 export default async function CategoryPage({ params, searchParams }) {
@@ -23,6 +24,10 @@ export default async function CategoryPage({ params, searchParams }) {
 
   if (category === "pages") {
     return <PagesCategoryItems category={category} context={context} />;
+  }
+
+  if (category === "blogs") {
+    return <BlogsCategoryItems category={category} context={context} />;
   }
 
   return <GenericCategoryItems category={category} context={context} />;
