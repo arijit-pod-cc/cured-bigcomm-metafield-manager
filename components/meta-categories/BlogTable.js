@@ -1,5 +1,30 @@
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import { Edit, BookOpen } from "lucide-react";
+
+function BlogImageItem({ src, alt }) {
+  const [imgSrc, setImgSrc] = useState(src || "/default_image.webp");
+
+  useEffect(() => {
+    setImgSrc(src || "/default_image.webp");
+  }, [src]);
+
+  return (
+    <Image
+      src={imgSrc}
+      alt={alt || "Blog"}
+      width={44}
+      height={44}
+      unoptimized
+      className="h-full w-full object-cover"
+      onError={() => {
+        if (imgSrc !== "/default_image.webp") {
+          setImgSrc("/default_image.webp");
+        }
+      }}
+    />
+  );
+}
 
 export default function BlogTable({
   items,
@@ -79,30 +104,10 @@ export default function BlogTable({
               <td className="px-5 py-3.5">
                 <div className="flex items-center gap-3">
                   <div className="relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-slate-50">
-                    {blog.image ? (
-                      <Image
-                        src={blog.image}
-                        alt={blog.name || "Blog"}
-                        width={44}
-                        height={44}
-                        sizes="44px"
-                        loading="lazy"
-                        className="h-full w-full object-cover"
-                        onError={(event) => {
-                          event.currentTarget.src = "/default_image.webp";
-                        }}
-                      />
-                    ) : (
-                      <Image
-                        src="/default_image.webp"
-                        alt={blog.name || "Blog"}
-                        width={44}
-                        height={44}
-                        sizes="44px"
-                        loading="lazy"
-                        className="h-full w-full object-cover"
-                      />
-                    )}
+                    <BlogImageItem
+                      src={blog.image}
+                      alt={blog.name || "Blog"}
+                    />
                   </div>
 
                   <div className="min-w-0 max-w-md">

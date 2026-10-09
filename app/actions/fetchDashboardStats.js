@@ -3,20 +3,16 @@
 import { decodePayload } from "@/lib/auth";
 import db from "@/lib/db";
 
+import { categories } from "@/data/meta-categories";
+
 export async function fetchDashboardStats(context) {
   try {
-    if (!context) return { metaCategoriesCount: 0, metaobjectsCount: 0 };
+    if (!context) return { metaCategoriesCount: categories.length, metaobjectsCount: 0 };
 
     const payload = decodePayload(context);
-    if (!payload?.context) return { metaCategoriesCount: 0, metaobjectsCount: 0 };
+    if (!payload?.context) return { metaCategoriesCount: categories.length, metaobjectsCount: 0 };
 
     const storeHash = payload.context;
-
-    // Count distinct categories configured in metafield_definitions
-    const catRows = await db.query(
-      "SELECT COUNT(DISTINCT category) as cnt FROM metafield_definitions WHERE storeHash = ?",
-      [storeHash]
-    );
 
     // Count metaobject definitions
     const moRows = await db.query(
@@ -25,7 +21,7 @@ export async function fetchDashboardStats(context) {
     );
 
     return {
-      metaCategoriesCount: catRows?.[0]?.cnt || 0,
+      metaCategoriesCount: categories.length,
       metaobjectsCount: moRows?.[0]?.cnt || 0,
     };
   } catch (err) {

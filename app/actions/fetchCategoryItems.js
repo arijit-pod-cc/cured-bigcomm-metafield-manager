@@ -250,11 +250,7 @@ export async function fetchBlogsItems(context, options = {}) {
             id: post.id,
             name: post.title,
             sku: post.url || String(post.id),
-            image: post.thumbnail_path
-                ? post.thumbnail_path.startsWith('http')
-                    ? post.thumbnail_path
-                    : `https://store-${storeHash}.mybigcommerce.com${post.thumbnail_path}`
-                : null,
+            image: `/api/blog/${post.id}/image?context=${encodeURIComponent(context)}`,
             url: post.url,
             is_published: post.is_published,
         }));
@@ -288,11 +284,7 @@ export async function fetchBlogsItems(context, options = {}) {
         id: post.id,
         name: post.title,
         sku: post.url || String(post.id),
-        image: post.thumbnail_path
-            ? post.thumbnail_path.startsWith('http')
-                ? post.thumbnail_path
-                : `https://store-${storeHash}.mybigcommerce.com${post.thumbnail_path}`
-            : null,
+        image: `/api/blog/${post.id}/image?context=${encodeURIComponent(context)}`,
         url: post.url,
         is_published: post.is_published,
     }));

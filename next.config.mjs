@@ -8,6 +8,16 @@ const nextConfig = {
         pathname: "/**",
       },
     ],
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "**.mybigcommerce.com",
+      },
+      {
+        protocol: "https",
+        hostname: "**.curednutrition.com",
+      },
+    ],
   },
 };
 
