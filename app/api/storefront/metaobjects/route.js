@@ -7,7 +7,13 @@ export async function GET(request) {
     const storeHash = searchParams.get("storeHash") || "";
     const type = searchParams.get("type") || "";
     const handle = searchParams.get("handle") || "";
-    const id = searchParams.get("id") || "";
+    const rawIds = searchParams.get("ids") || searchParams.get("id") || "";
+    const idList = rawIds
+      ? String(rawIds)
+          .split(",")
+          .map((s) => Number(s.trim()))
+          .filter((n) => !isNaN(n) && n > 0)
+      : [];
 
     let queryStoreHash = storeHash;
     if (!queryStoreHash) {
@@ -17,11 +23,24 @@ export async function GET(request) {
       }
     }
 
-    if (!type && !id) {
+    if (!type && idList.length === 0) {
       return NextResponse.json(
-        { error: "type or id parameter is required" },
+        { error: "type, id, or ids parameter is required" },
         { status: 400, headers: { "Access-Control-Allow-Origin": "*" } }
       );
+    }
+
+    // Auto-resolve definition ID from entry IDs if type was not explicitly supplied
+    let resolvedDefId = null;
+    if (!type && idList.length > 0) {
+      const placeholders = idList.map(() => "?").join(",");
+      const entryDefs = await db.query(
+        `SELECT metaobjectDefinitionId FROM metaobject_entries WHERE id IN (${placeholders}) LIMIT 1`,
+        idList
+      );
+      if (entryDefs && entryDefs.length > 0) {
+        resolvedDefId = entryDefs[0].metaobjectDefinitionId;
+      }
     }
 
     // Find metaobject definition
@@ -31,6 +50,9 @@ export async function GET(request) {
     if (type) {
       defQuery += " AND type = ?";
       defParams.push(type);
+    } else if (resolvedDefId) {
+      defQuery += " AND id = ?";
+      defParams.push(resolvedDefId);
     }
 
     const defs = await db.query(defQuery, defParams);
@@ -56,9 +78,13 @@ export async function GET(request) {
     if (handle) {
       entrySql += " AND handle = ?";
       entryParams.push(handle);
-    } else if (id) {
+    } else if (idList.length === 1) {
       entrySql += " AND id = ?";
-      entryParams.push(Number(id));
+      entryParams.push(idList[0]);
+    } else if (idList.length > 1) {
+      const placeholders = idList.map(() => "?").join(",");
+      entrySql += ` AND id IN (${placeholders})`;
+      entryParams.push(...idList);
     }
 
     const entries = await db.query(entrySql, entryParams);
